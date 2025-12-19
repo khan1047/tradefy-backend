@@ -8,7 +8,7 @@ const adSchema = new mongoose.Schema(
       trim: true,
     },
     price: {
-      type: String,
+      type: Number,
       required: true,
     },
     location: {
@@ -17,14 +17,26 @@ const adSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      default: "",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
+    category: {
+      type: String,
+      required: true, // 🔑 IMPORTANT
+    },
+    images: [
+      {
+        type: String,
+      },
+    ],
+    status: {
+      type: String,
+      default: "approved",
+    },
+    views: {
+      type: Number,
+      default: 0,
     },
   },
-  { collection: "ads" }
+  { timestamps: true }
 );
 
 export default mongoose.model("Ad", adSchema);
