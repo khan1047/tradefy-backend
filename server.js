@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import { WebSocketServer } from "ws";
 
 // Routes
 import authRoutes from "./routes/auth.routes.js";
@@ -62,3 +63,48 @@ const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+// -------------------------------
+// WEBSOCKET CHAT SERVER
+// -------------------------------
+const wss = new WebSocketServer({ port: 5002 });
+
+const rooms = {}; // { roomId: Set<ws> }
+
+wss.on("connection", (ws) => {
+  ws.on("message", (message) => {
+    const data = JSON.parse(message.toString());
+
+    const { type, roomId, text, sender } = data;
+
+    // Join room
+    if (type === "join") {
+      if (!rooms[roomId]) rooms[roomId] = new Set();
+      rooms[roomId].add(ws);
+      ws.roomId = roomId;
+      return;
+    }
+
+    // Send message
+    if (type === "message") {
+      rooms[roomId]?.forEach((client) => {
+        if (client.readyState === 1) {
+          client.send(
+            JSON.stringify({
+              sender,
+              text,
+              time: new Date().toISOString(),
+            })
+          );
+        }
+      });
+    }
+  });
+
+  ws.on("close", () => {
+    if (ws.roomId && rooms[ws.roomId]) {
+      rooms[ws.roomId].delete(ws);
+    }
+  });
+});
+
+console.log("💬 WebSocket chat running on ws://localhost:5002");
